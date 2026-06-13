@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CodeLens AI — Multi-Model Code Review</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+
+  <!-- All styles in one file -->
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="logo">Code<span>Lens</span></div>
+  <div class="badge">MULTI-MODEL AI</div>
+  <div class="models-row">
+    <div class="model-pill"><span class="dot"></span>Groq (Security)</div>
+    <div class="model-pill"><span class="dot"></span>Gemini (Performance)</div>
+    <div class="model-pill"><span class="dot"></span>Groq (Readability)</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── HERO ── -->
+  <div class="hero">
+    <h1>Review code with <em>3 AI models</em> at once</h1>
+    <p>Security · Performance · Readability — all in parallel</p>
+  </div>
+
+  <!-- ── API KEYS ── -->
+  <div style="margin-bottom: 1.25rem;">
+    <div style="font-size:12px; color:var(--muted); font-family:var(--mono); margin-bottom:8px;">
+      🔑 API KEYS — stored only in your browser session, never sent anywhere
+    </div>
+    <div class="keys-row">
+      <div style="flex:1; min-width:220px;">
+        <div class="key-label">GROQ — Security (Llama 3.3 70B)</div>
+        <input class="key-field" id="openaiKey" type="password" placeholder="gsk_..." />
+      </div>
+      <div style="flex:1; min-width:220px;">
+        <div class="key-label">GOOGLE (Gemini) — Performance</div>
+        <input class="key-field" id="geminiKey" type="password" placeholder="AIza..." />
+      </div>
+      <div style="flex:1; min-width:220px;">
+        <div class="key-label">GROQ — Readability (Llama 3.1 8B)</div>
+        <input class="key-field" id="claudeKey" type="password" placeholder="gsk_..." />
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CODE INPUT ── -->
+  <div class="input-panel">
+    <div class="input-toolbar">
+      <select class="lang-select" id="langSelect">
+        <option value="javascript">JavaScript</option>
+        <option value="python">Python</option>
+        <option value="typescript">TypeScript</option>
+        <option value="java">Java</option>
+        <option value="cpp">C++</option>
+        <option value="go">Go</option>
+        <option value="rust">Rust</option>
+        <option value="php">PHP</option>
+      </select>
+      <span class="char-count" id="charCount">0 characters</span>
+    </div>
+    <textarea id="codeInput"
+      placeholder="// Paste your code here...&#10;// Or try the example snippets below ↓"
+      spellcheck="false">
+    </textarea>
+  </div>
+
+  <!-- ── EXAMPLE SNIPPETS ── -->
+  <div class="examples">
+    <span style="font-size:12px; color:var(--muted); font-family:var(--mono); align-self:center;">Try examples:</span>
+    <button class="example-btn" onclick="loadExample('sql')">SQL injection risk</button>
+    <button class="example-btn" onclick="loadExample('loop')">Inefficient loop</button>
+    <button class="example-btn" onclick="loadExample('auth')">Auth function</button>
+    <button class="example-btn" onclick="loadExample('async')">Async/await</button>
+  </div>
+
+  <!-- ── REVIEW BUTTON ── -->
+  <div class="controls" style="margin-top:1rem;">
+    <button class="review-btn" id="reviewBtn" onclick="runReview()">
+      ⚡ Review with 3 AI Models
+    </button>
+    <button class="clear-btn" onclick="clearAll()">Clear</button>
+  </div>
+
+  <!-- ── SUMMARY BAR ── -->
+  <div class="summary-bar" id="summaryBar">
+    <div>
+      <div class="summary-label">MODELS USED</div>
+      <div class="summary-value" style="color:var(--accent)">3</div>
+    </div>
+    <div class="summary-divider"></div>
+    <div>
+      <div class="summary-label">ISSUES FOUND</div>
+      <div class="summary-value" id="issueCount" style="color:var(--red)">—</div>
+    </div>
+    <div class="summary-divider"></div>
+    <div>
+      <div class="summary-label">ANALYSIS TIME</div>
+      <div class="summary-value" id="analysisTime" style="color:var(--green)">—</div>
+    </div>
+    <div class="summary-divider"></div>
+    <div>
+      <div class="summary-label">LANGUAGE</div>
+      <div class="summary-value" id="langDisplay" style="color:var(--amber); font-family:var(--mono); font-size:1rem;">—</div>
+    </div>
+  </div>
+
+  <div style="margin-top:1.25rem;"></div>
+
+  <!-- ── MODEL CARDS ── -->
+  <div class="cards-grid">
+
+    <!-- Security Card -->
+    <div class="model-card" id="card-security">
+      <div class="card-header">
+        <div class="card-icon icon-security">🔒</div>
+        <div class="card-meta">
+          <div class="card-title">Security Analysis</div>
+          <div class="card-model">Llama 3.3 70B · Groq</div>
+        </div>
+        <span class="card-status status-idle" id="status-security">idle</span>
+      </div>
+      <div class="card-body" id="body-security">
+        <div class="empty-state">
+          <div class="empty-icon">🛡️</div>
+          <span>Checks for SQL injection, XSS,<br/>auth issues, exposed secrets</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Performance Card -->
+    <div class="model-card" id="card-performance">
+      <div class="card-header">
+        <div class="card-icon icon-performance">⚡</div>
+        <div class="card-meta">
+          <div class="card-title">Performance Review</div>
+          <div class="card-model">Gemini 2.5 Flash · Google</div>
+        </div>
+        <span class="card-status status-idle" id="status-performance">idle</span>
+      </div>
+      <div class="card-body" id="body-performance">
+        <div class="empty-state">
+          <div class="empty-icon">🚀</div>
+          <span>Checks for O(n²) loops, memory leaks,<br/>unnecessary re-renders, bottlenecks</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Readability Card -->
+    <div class="model-card" id="card-readability">
+      <div class="card-header">
+        <div class="card-icon icon-readability">📖</div>
+        <div class="card-meta">
+          <div class="card-title">Readability & Style</div>
+          <div class="card-model">Llama 3.1 8B · Groq</div>
+        </div>
+        <span class="card-status status-idle" id="status-readability">idle</span>
+      </div>
+      <div class="card-body" id="body-readability">
+        <div class="empty-state">
+          <div class="empty-icon">✨</div>
+          <span>Checks naming, complexity, comments,<br/>best practices, code structure</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer>CodeLens AI · Multi-Model Code Review · Built for hackathon · API keys stay in your browser</footer>
+
+<!-- ── SCRIPTS (load order matters!) ── -->
+<!-- 1. api.js     — API call functions (callSecurityModel, etc.) -->
+<!-- 2. parser.js  — Text parser (parseResponse) -->
+<!-- 3. ui.js      — DOM helpers (setCardLoading, resetCards, etc.) -->
+<!-- 4. app.js     — Main logic (runReview, loadExample, clearAll) -->
+<script src="scripts/api.js"></script>
+<script src="scripts/parser.js"></script>
+<script src="scripts/ui.js"></script>
+<script src="scripts/app.js"></script>
+
+</body>
+</html>
